@@ -3,7 +3,7 @@
 module.exports = function(app) {
 	var mongo = require('mongodb').MongoClient;
 	var url = 'mongodb://localhost';
-	var givenUrl;
+	var randomstring = require("randomstring");
 	
 	mongo.connect(url, function(err, db) {	
 		if(err) throw err;
@@ -11,7 +11,7 @@ module.exports = function(app) {
 	db.close;
 	});
 	
-	app.route('/:url')
+	app.route('/:shortUrl')
 	.get(function(req, res) {
 		//check if exists
 		mongo.connect(url, function(err, db){
@@ -20,13 +20,13 @@ module.exports = function(app) {
 			
 			//if exists redirect else send message
 			collection.findOne({
-				"original": process.argv[2]
+				"short": req.params.shortUrl
 			}, function(err, result) {
 				if(err) throw err;
 				
 				if(result) {
-					console.log(result);
-					res.end("Finished");
+					console.log(result.original);
+					res.redirect(result.original);
 				} else {
 					res.send("This url is not in the databse");
 				}
@@ -40,45 +40,52 @@ module.exports = function(app) {
 	app.route('/new/:url*')
 	.get(function(req, res) {
 		
-		var temp;
+		// promise rejection error handling
+		var p = new Promise(function(reason) {
+			console.log(reason);
+		});
+		var data;
 		var clientUrl = req.originalUrl.substring(5);
 		console.log(clientUrl);
+		
 		//check if valid
 		if(validUrl(clientUrl)) {
 			console.log("valid");
 			//if valid check if exists
 			mongo.connect(url, function(err, db) {
 				if(err) throw err;
-				var collection = db.collection("urls");
+				
+				console.log("after");
 				
 				
-				collection.findOne({
-					"original": url
-				}, function(err, data){
-					if(err) throw err;
-					if(!data) { //if doesn't exist
-						//create url
-						console.log("Creating url");
-						data = "Some new data";
-					}
-					
-					temp = data;
-					
+				var collection = db.collection("urls");	
+				// search the db.If found, return doc else create and return doc
+				data = collection.findAndModify({
+					query: { "original": clientUrl },
+					update: {
+						$setOnInsert: {"original": clientUrl, "short": randomstring.generate(6)}
+					},
+					new: true,
+					upsert: true
 				});
 				
+				res.json(data);
 				
+				db.collection("urls").find().forEach(function(data) {
+					console.log(data);
+				});
 				
 				db.close();
 			});
 			
-			//send json
+			
+			
 		} else {
-			console.log('not valid');
-			//if not valid send empty json/message
+			console.log('not valid url');
+			//if not valid send empty message
+			res.send("Not valid url");
 		}
 		
-		console.log(temp);
-		res.send(temp);
 		
 		
 	});
