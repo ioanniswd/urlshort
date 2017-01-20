@@ -3,8 +3,8 @@
 module.exports = function(app) {
 	var Promise = require('promise');
 	var mongo = require('mongodb').MongoClient;
-	var url = "process.env.MONGOLAB_URI";
-	//var url = 'mongodb://localhost';
+	//var url = "process.env.MONGOLAB_URI";
+	var url = 'mongodb://localhost/urlshort';
 	var randomstring = require("randomstring");
 	
 	mongo.connect(url, function(err, db) {	
@@ -59,8 +59,8 @@ module.exports = function(app) {
 						if(err) reject(err);
 						else resolve(data);
 					});
+				db.close();
 			});
-			db.close();
 		});
 		var clientUrl = req.originalUrl.substring(5);
 		console.log(clientUrl);
@@ -70,7 +70,7 @@ module.exports = function(app) {
 			console.log("valid");			
 				
 			p.then(function(val) {
-				res.json(val);
+				res.send(val);
 			}).catch(function(reason){
 				res.send("Error: " + reason);
 			});
