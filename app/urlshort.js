@@ -1,6 +1,7 @@
 'use strict';
 
 module.exports = function(app) {
+	var Promise = require('promise');
 	var mongo = require('mongodb').MongoClient;
 	var url = 'mongodb://localhost';
 	var randomstring = require("randomstring");
@@ -41,43 +42,37 @@ module.exports = function(app) {
 	.get(function(req, res) {
 		
 		// promise rejection error handling
-		var p = new Promise(function(reason) {
-			console.log(reason);
+		var p = new Promise(function(resolve, reject) {
+			mongo.connect(url, function(err, db) {
+				if(err) throw err;
+				console.log(url);
+				var collection = db.collection("urls");
+				collection.findAndModify(
+					{query: { "original": clientUrl } },
+					{update: {
+						$setOnInsert: {"original": clientUrl, "short": randomstring.generate(6)}
+					}},
+					{new: true},
+					{upsert: true},
+					function(err, data) {
+						if(err) reject(err);
+						else resolve(data);
+					});
+			});
+			db.close();
 		});
-		var data;
 		var clientUrl = req.originalUrl.substring(5);
 		console.log(clientUrl);
 		
 		//check if valid
 		if(validUrl(clientUrl)) {
-			console.log("valid");
-			//if valid check if exists
-			mongo.connect(url, function(err, db) {
-				if(err) throw err;
+			console.log("valid");			
 				
-				console.log("after");
-				
-				
-				var collection = db.collection("urls");	
-				// search the db.If found, return doc else create and return doc
-				data = collection.findAndModify({
-					query: { "original": clientUrl },
-					update: {
-						$setOnInsert: {"original": clientUrl, "short": randomstring.generate(6)}
-					},
-					new: true,
-					upsert: true
-				});
-				
-				res.json(data);
-				
-				db.collection("urls").find().forEach(function(data) {
-					console.log(data);
-				});
-				
-				db.close();
+			p.then(function(val) {
+				res.json(val);
+			}).catch(function(reason){
+				res.send("Error: " + reason);
 			});
-			
 			
 			
 		} else {
