@@ -3,7 +3,8 @@
 module.exports = function(app) {
 	var Promise = require('promise');
 	var mongo = require('mongodb').MongoClient;
-	var url = 'mongodb://localhost';
+	var herokuUrl = "process.env.MONGOLAB_URI";
+	var url = 'mongodb://localhost/27017';
 	var randomstring = require("randomstring");
 	
 	mongo.connect(url, function(err, db) {	
@@ -15,7 +16,7 @@ module.exports = function(app) {
 	app.route('/:shortUrl')
 	.get(function(req, res) {
 		//check if exists
-		mongo.connect(url, function(err, db){
+		mongo.connect(herokuUrl || url, function(err, db){
 			if(err) throw err;
 			var collection = db.collection("urls");
 			
