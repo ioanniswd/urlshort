@@ -1,19 +1,30 @@
 {
-  "name": "url2",
+  "name": "urlshort",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.15.2",
     "express": "^4.14.0",
-    "mongodb": "^2.2.21",
+    "mongodb": "^2.2.22",
+    "mongoose": "^4.7.8",
     "path": "^0.12.7",
     "promise": "^7.1.1",
     "valid-url": "^1.0.9"
-  }
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ioanniswd/urlshort.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ioanniswd/urlshort/issues"
+  },
+  "homepage": "https://github.com/ioanniswd/urlshort#readme",
+  "description": ""
 }

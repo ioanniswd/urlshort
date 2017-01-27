@@ -4,7 +4,7 @@ module.exports = function(app) {
 	var Promise = require('promise');
 	var mongo = require('mongodb').MongoClient;
 	//var url = "process.env.MONGOLAB_URI";
-	var url = 'mongodb://localhost/urlshort';
+	var url = 'mongodb://localhost/test';
 	var randomstring = require("randomstring");
 	
 	mongo.connect(url, function(err, db) {	
@@ -22,7 +22,7 @@ module.exports = function(app) {
 			
 			//if exists redirect else send message
 			collection.findOne({
-				"short": req.params.shortUrl
+				"short": { $eq: req.params.shortUrl}
 			}, function(err, result) {
 				if(err) throw err;
 				
@@ -42,39 +42,48 @@ module.exports = function(app) {
 	app.route('/new/:url*')
 	.get(function(req, res) {
 		
-		// promise rejection error handling
-		var p = new Promise(function(resolve, reject) {
-			mongo.connect(url, function(err, db) {
-				if(err) throw err;
-				console.log(url);
-				var collection = db.collection("urls");
-				collection.findAndModify(
-					{query: { "original": clientUrl } },
-					{update: {
-						$setOnInsert: {"original": clientUrl, "short": randomstring.generate(6)}
-					}},
-					{new: true},
-					{upsert: true},
-					function(err, data) {
-						if(err) reject(err);
-						else resolve(data);
-					});
-				db.close();
-			});
-		});
+	
 		var clientUrl = req.originalUrl.substring(5);
 		console.log(clientUrl);
 		
 		//check if valid
 		if(validUrl(clientUrl)) {
 			console.log("valid");			
-				
-			p.then(function(val) {
-				res.send(val);
-			}).catch(function(reason){
-				res.send("Error: " + reason);
-			});
 			
+			mongo.connect(url, function(err, db) {
+				if(err) throw err;
+				console.log(url);
+				var collection = db.collection("urls");			
+				
+				var urlObj;
+				var result = collection.findOne({"original": clientUrl});
+				
+				result.then(function(result) {
+					
+					if(result) {
+						console.log("Found in db");
+						urlObj = result;
+					} else {
+						console.log("Not in the db. Creating...");
+						urlObj = {"original": clientUrl, "short": randomstring.generate(6)};
+						collection.save(urlObj, function(err) {
+							if(err) throw err;
+							
+							console.log("Added");
+						});
+						console.log(urlObj);
+					}
+					res.send(urlObj);
+					
+				}).catch(function(reason) {
+					console.log(reason);
+					res.end(reason);
+				});
+				
+				
+				
+				db.close();
+			});
 			
 		} else {
 			console.log('not valid url');
