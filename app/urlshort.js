@@ -66,14 +66,15 @@ module.exports = function(app) {
 					} else {
 						console.log("Not in the db. Creating...");
 						urlObj = {"original": clientUrl, "short": randomstring.generate(6)};
-						collection.save(urlObj, function(err) {
+						collection.save(urlObj, function(err, result) {
 							if(err) throw err;
 							
-							console.log("Added");
+							console.log("Added " + result);
 						});
 						console.log(urlObj);
+						db.close();
 					}
-					res.send(urlObj);
+					res.json({"original": urlObj.original, "short": urlObj.short});
 					
 				}).catch(function(reason) {
 					console.log(reason);
@@ -81,8 +82,6 @@ module.exports = function(app) {
 				});
 				
 				
-				
-				db.close();
 			});
 			
 		} else {
